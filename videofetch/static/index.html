@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VideoFetch — Free Online Video Downloader & Bulk Scraper</title>
+<meta name="description" content="Download videos from YouTube, TikTok, Instagram, X, Facebook, Vimeo and 1000+ sites. Paste one link or hundreds — bulk download, scrape playlists & channels, export metadata.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/"><span class="logo">▶</span> VideoFetch</a>
+  <nav>
+    <a href="#tool">Downloader</a>
+    <a href="#how">How it works</a>
+    <a href="#platforms">Platforms</a>
+    <a href="#faq">FAQ</a>
+    <button id="themeBtn" class="icon-btn" title="Toggle theme">◐</button>
+  </nav>
+</header>
+
+<main>
+  <section class="hero" id="tool">
+    <h1>Download any video.<br><span class="grad">One link or a thousand.</span></h1>
+    <p class="sub">Free, fast, no sign-up. YouTube, TikTok, Instagram, X, Facebook, Vimeo, Reddit and 1000+ more sites — in MP4 up to 4K or MP3.</p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="single">Single link</button>
+      <button class="tab" data-tab="bulk">Bulk links</button>
+      <button class="tab" data-tab="scrape">Playlist / Channel scrape</button>
+    </div>
+
+    <div class="panel active" id="panel-single">
+      <form id="singleForm" class="input-row">
+        <input id="singleUrl" type="url" placeholder="Paste video link here…" required autocomplete="off">
+        <button type="button" class="ghost" id="pasteBtn">Paste</button>
+        <button class="primary" type="submit">Fetch</button>
+      </form>
+    </div>
+
+    <div class="panel" id="panel-bulk">
+      <form id="bulkForm">
+        <textarea id="bulkUrls" rows="7" placeholder="Paste multiple links — one per line (or separated by spaces/commas). Up to 200 links."></textarea>
+        <div class="row-between">
+          <span class="muted" id="bulkCount">0 links detected</span>
+          <div class="btns">
+            <label class="ghost file-label">Import .txt/.csv<input type="file" id="bulkFile" accept=".txt,.csv" hidden></label>
+            <button class="primary" type="submit">Fetch all</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel" id="panel-scrape">
+      <form id="scrapeForm" class="input-row">
+        <input id="scrapeUrl" type="url" placeholder="Playlist, channel, profile or hashtag URL…" required>
+        <select id="scrapeLimit" title="Max videos">
+          <option value="25">25 videos</option>
+          <option value="50" selected>50 videos</option>
+          <option value="100">100 videos</option>
+          <option value="250">250 videos</option>
+          <option value="500">500 videos</option>
+        </select>
+        <button class="primary" type="submit">Scrape</button>
+      </form>
+      <p class="muted small">Works with YouTube playlists/channels, TikTok profiles, Instagram profiles (cookies may be required), Vimeo showcases, SoundCloud sets, and more.</p>
+    </div>
+
+    <div id="status" class="status" hidden></div>
+  </section>
+
+  <!-- Single result -->
+  <section id="singleResult" class="card result" hidden></section>
+
+  <!-- Bulk / scrape results -->
+  <section id="bulkResult" class="card" hidden>
+    <div class="toolbar">
+      <div>
+        <h2 id="bulkTitle">Results</h2>
+        <span class="muted" id="bulkMeta"></span>
+      </div>
+      <div class="btns wrap">
+        <label class="check"><input type="checkbox" id="selectAll" checked> Select all</label>
+        <input type="search" id="filterInput" placeholder="Filter by title…">
+        <select id="bulkFormat" title="Quality for all selected">
+          <option value="best">Best quality (MP4)</option>
+          <option value="2160p">4K (2160p)</option>
+          <option value="1080p">1080p</option>
+          <option value="720p">720p</option>
+          <option value="480p">480p</option>
+          <option value="360p">360p</option>
+          <option value="mp3">MP3 audio</option>
+          <option value="m4a">M4A audio</option>
+        </select>
+        <button class="ghost" id="exportCsv">Export CSV</button>
+        <button class="ghost" id="exportJson">Export JSON</button>
+        <button class="ghost" id="copyLinks">Copy links</button>
+        <button class="primary" id="downloadSelected">Download selected (ZIP)</button>
+      </div>
+    </div>
+    <div id="jobBar" class="jobbar" hidden>
+      <div class="progress"><div id="jobProgress"></div></div>
+      <span id="jobText"></span>
+      <a id="zipLink" class="primary btn" hidden>Save ZIP</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Video</th><th>Platform</th><th>Duration</th><th>Views</th><th>Status</th><th></th></tr></thead>
+        <tbody id="bulkBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature"><div class="ico">⚡</div><h3>Lightning fast</h3><p>Parallel fetching and downloading — process dozens of links at once.</p></div>
+    <div class="feature"><div class="ico">📦</div><h3>Bulk download</h3><p>Paste hundreds of URLs or scrape a whole playlist and get everything in one ZIP.</p></div>
+    <div class="feature"><div class="ico">🎬</div><h3>Up to 4K + MP3</h3><p>Choose any resolution from 144p to 2160p, or extract audio as MP3/M4A.</p></div>
+    <div class="feature"><div class="ico">📊</div><h3>Metadata export</h3><p>Scrape titles, views, likes, durations and upload dates to CSV or JSON.</p></div>
+    <div class="feature"><div class="ico">🔒</div><h3>Private</h3><p>No account, no tracking. Files are deleted from the server automatically.</p></div>
+    <div class="feature"><div class="ico">🌐</div><h3>1000+ sites</h3><p>Powered by yt-dlp, the most complete open-source extractor available.</p></div>
+  </section>
+
+  <section id="how" class="how">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>1</b><h3>Copy the link</h3><p>Copy the URL of a video, playlist, channel or profile.</p></li>
+      <li><b>2</b><h3>Paste & fetch</h3><p>Paste one link, many links, or a playlist URL and hit fetch.</p></li>
+      <li><b>3</b><h3>Download</h3><p>Pick quality and download individually or everything as a ZIP.</p></li>
+    </ol>
+  </section>
+
+  <section id="platforms" class="platforms">
+    <h2>Supported platforms</h2>
+    <div class="chips">
+      <span>YouTube</span><span>YouTube Shorts</span><span>TikTok</span><span>Instagram</span><span>Facebook</span><span>X / Twitter</span>
+      <span>Reddit</span><span>Vimeo</span><span>Dailymotion</span><span>Twitch clips</span><span>SoundCloud</span><span>Bilibili</span>
+      <span>Pinterest</span><span>Snapchat</span><span>LinkedIn</span><span>Tumblr</span><span>Rumble</span><span>+1000 more</span>
+    </div>
+  </section>
+
+  <section id="faq" class="faq">
+    <h2>Frequently asked questions</h2>
+    <details><summary>Is VideoFetch free?</summary><p>Yes. There are no fees, no sign-up and no watermarks.</p></details>
+    <details><summary>How do I download many videos at once?</summary><p>Use the <b>Bulk links</b> tab to paste up to 200 URLs, or the <b>Playlist / Channel scrape</b> tab to pull every video from a playlist, channel or profile. Select the ones you want and click <b>Download selected (ZIP)</b>.</p></details>
+    <details><summary>Can I download only the audio?</summary><p>Yes — choose MP3 or M4A from the quality menu.</p></details>
+    <details><summary>Why did a link fail?</summary><p>Private, age-restricted, region-locked or login-only videos can't be fetched without cookies. The server admin can configure a cookies file to enable these.</p></details>
+    <details><summary>Is it legal?</summary><p>Only download content you own or have permission to download, and respect each platform's terms of service and copyright law.</p></details>
+  </section>
+</main>
+
+<footer>
+  <p>© <span id="year"></span> VideoFetch · For personal use with content you have rights to · Powered by yt-dlp</p>
+</footer>
+
+<template id="rowTpl">
+  <tr>
+    <td><input type="checkbox" class="sel" checked></td>
+    <td class="vid"><img loading="lazy" alt=""><div><a class="t" target="_blank" rel="noopener"></a><div class="muted small u"></div></div></td>
+    <td class="plat"></td>
+    <td class="dur"></td>
+    <td class="views"></td>
+    <td class="st"></td>
+    <td><button class="ghost sm dl">Download</button></td>
+  </tr>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>
