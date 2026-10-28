@@ -1,6 +1,9 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
+// Backend location: same origin by default; override with ?api=https://your-server or window.VF_API.
+const API = (new URLSearchParams(location.search).get("api") || window.VF_API || "").replace(/\/$/, "");
+
 let rows = [];          // bulk/scrape results
 let currentJob = null;  // polling job id
 
@@ -30,14 +33,14 @@ function setStatus(msg, type = "loading") {
 }
 
 async function api(path, body) {
-  const res = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+  const res = await fetch(API + path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
   return data;
 }
 
 function downloadUrl(url, format) {
-  return `/api/download?url=${encodeURIComponent(url)}&format=${encodeURIComponent(format)}`;
+  return `${API}/api/download?url=${encodeURIComponent(url)}&format=${encodeURIComponent(format)}`;
 }
 
 function triggerDownload(href) {
@@ -282,7 +285,7 @@ async function pollJob(id, list) {
   job.items.forEach((it, i) => {
     const r = list[i];
     r.status = it.status; r.progress = it.progress; r.error = it.error;
-    if (it.status === "done") r.jobFile = `/api/jobs/${id}/file/${i}`;
+    if (it.status === "done") r.jobFile = `${API}/api/jobs/${id}/file/${i}`;
   });
   const pct = job.items.reduce((a, it) => a + (it.status === "done" || it.status === "error" ? 100 : it.progress || 0), 0) / job.total;
   $("#jobProgress").style.width = pct.toFixed(1) + "%";
@@ -293,7 +296,7 @@ async function pollJob(id, list) {
     $("#downloadSelected").disabled = false;
     if (job.zip_ready) {
       const z = $("#zipLink");
-      z.href = `/api/jobs/${id}/zip`; z.hidden = false;
+      z.href = `${API}/api/jobs/${id}/zip`; z.hidden = false;
       triggerDownload(z.href);
       $("#jobText").textContent += " · ZIP ready";
     } else {

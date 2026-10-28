@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VideoFetch — Free Online Video Downloader & Bulk Scraper</title>
+<meta name="description" content="Download videos from YouTube, TikTok, Instagram, X, Facebook, Vimeo and 1000+ sites. Paste one link or hundreds — bulk download, scrape playlists & channels, export metadata.">
+<style>
+:root {
+  --bg: #f7f7fb; --surface: #ffffff; --surface-2: #f0f0f6; --text: #14141f; --muted: #6b6b80;
+  --border: #e3e3ec; --primary: #6c47ff; --primary-2: #ff4fa3; --ok: #16a34a; --err: #dc2626; --warn: #d97706;
+  --radius: 14px; --shadow: 0 10px 30px rgba(20, 20, 50, .08);
+}
+:root[data-theme="dark"] {
+  --bg: #0d0d14; --surface: #161622; --surface-2: #1f1f2e; --text: #ececf4; --muted: #9a9ab0;
+  --border: #2a2a3c; --shadow: 0 10px 30px rgba(0, 0, 0, .4);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0d14; --surface: #161622; --surface-2: #1f1f2e; --text: #ececf4; --muted: #9a9ab0;
+    --border: #2a2a3c; --shadow: 0 10px 30px rgba(0, 0, 0, .4);
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-padding-top: 80px; }
+body { margin: 0; font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+a { color: var(--primary); text-decoration: none; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .4em; }
+.muted { color: var(--muted); } .small { font-size: 13px; }
+
+.nav { display: flex; justify-content: space-between; align-items: center; padding: 14px clamp(16px, 4vw, 48px); position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+.brand { font-weight: 800; font-size: 20px; color: var(--text); display: flex; gap: 8px; align-items: center; }
+.logo { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #fff; font-size: 13px; background: linear-gradient(135deg, var(--primary), var(--primary-2)); }
+.nav nav { display: flex; gap: 18px; align-items: center; }
+.nav nav a { color: var(--muted); font-weight: 500; }
+.nav nav a:hover { color: var(--text); }
+@media (max-width: 640px) { .nav nav a { display: none; } }
+
+main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+.hero { text-align: center; padding: 56px 0 24px; }
+.hero h1 { font-size: clamp(30px, 5.5vw, 54px); font-weight: 850; letter-spacing: -.02em; }
+.grad { background: linear-gradient(90deg, var(--primary), var(--primary-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sub { color: var(--muted); max-width: 640px; margin: 0 auto 28px; font-size: 17px; }
+
+.tabs { display: inline-flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 12px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
+.tab { border: 0; background: transparent; color: var(--muted); padding: 9px 16px; border-radius: 9px; font-weight: 600; cursor: pointer; font-size: 14px; }
+.tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.panel { display: none; max-width: 820px; margin: 0 auto; }
+.panel.active { display: block; }
+
+.input-row { display: flex; gap: 8px; background: var(--surface); padding: 8px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); }
+.input-row input { flex: 1; min-width: 0; }
+input, select, textarea { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; outline: none; }
+.input-row input, .input-row select { border: 0; background: transparent; }
+input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+textarea { width: 100%; resize: vertical; box-shadow: var(--shadow); font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+@media (max-width: 560px) { .input-row { flex-wrap: wrap; } .input-row input { flex-basis: 100%; } }
+
+button, .btn, .file-label { font: inherit; font-weight: 600; border-radius: 10px; padding: 10px 18px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; }
+.primary:hover { filter: brightness(1.08); }
+.primary:disabled { opacity: .55; cursor: not-allowed; }
+.ghost { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.ghost:hover { border-color: var(--primary); }
+.sm { padding: 6px 12px; font-size: 13px; }
+.icon-btn { background: var(--surface-2); color: var(--text); padding: 6px 10px; border: 1px solid var(--border); }
+.row-between { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; flex-wrap: wrap; }
+.btns { display: flex; gap: 8px; align-items: center; }
+.btns.wrap { flex-wrap: wrap; }
+
+.status { margin: 18px auto 0; max-width: 820px; padding: 12px 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: flex; gap: 10px; align-items: center; justify-content: center; }
+.status.error { border-color: var(--err); color: var(--err); }
+.spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin: 24px 0; }
+.result { display: grid; grid-template-columns: minmax(0, 340px) 1fr; gap: 22px; }
+.result img { width: 100%; border-radius: 10px; aspect-ratio: 16/9; object-fit: cover; background: var(--surface-2); }
+.result .stats { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 14px; margin: 6px 0 14px; }
+.fmt-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.fmt { display: flex; justify-content: space-between; align-items: center; background: var(--surface-2); border: 1px solid var(--border); padding: 9px 12px; border-radius: 10px; gap: 8px; }
+.fmt .tag { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--primary); color: #fff; margin-left: 6px; }
+.fmt .tag.audio { background: var(--primary-2); }
+.fmt .muted { white-space: nowrap; }
+@media (max-width: 720px) { .result { grid-template-columns: 1fr; } }
+
+.toolbar { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 12px; }
+.toolbar input[type=search], .toolbar select { padding: 8px 10px; font-size: 14px; }
+.check { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+.jobbar { display: flex; align-items: center; gap: 12px; padding: 10px 0 14px; flex-wrap: wrap; }
+.progress { flex: 1; min-width: 160px; height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.progress > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--primary), var(--primary-2)); transition: width .3s; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; padding: 8px; border-bottom: 1px solid var(--border); }
+td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+td.vid { display: flex; gap: 10px; align-items: center; min-width: 280px; }
+td.vid img { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; background: var(--surface-2); flex-shrink: 0; }
+td.vid a { color: var(--text); font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pill { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); white-space: nowrap; }
+.pill.ok { color: var(--ok); } .pill.err { color: var(--err); } .pill.run { color: var(--warn); }
+tr.hidden { display: none; }
+
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin: 56px 0; }
+.feature { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.feature .ico { font-size: 26px; margin-bottom: 8px; }
+.feature p { color: var(--muted); margin: 0; }
+.how, .platforms, .faq { margin: 56px 0; text-align: center; }
+.steps { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.steps li { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+.steps b { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-2)); margin-bottom: 10px; }
+.steps p { color: var(--muted); margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chips span { background: var(--surface); border: 1px solid var(--border); padding: 7px 14px; border-radius: 99px; font-weight: 500; }
+.faq { text-align: left; max-width: 780px; margin-left: auto; margin-right: auto; }
+.faq h2 { text-align: center; }
+details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+summary { font-weight: 600; cursor: pointer; }
+details p { color: var(--muted); margin: 10px 0 0; }
+footer { text-align: center; color: var(--muted); padding: 30px 16px; border-top: 1px solid var(--border); font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/"><span class="logo">▶</span> VideoFetch</a>
+  <nav>
+    <a href="#tool">Downloader</a>
+    <a href="#how">How it works</a>
+    <a href="#platforms">Platforms</a>
+    <a href="#faq">FAQ</a>
+    <button id="themeBtn" class="icon-btn" title="Toggle theme">◐</button>
+  </nav>
+</header>
+
+<main>
+  <section class="hero" id="tool">
+    <h1>Download any video.<br><span class="grad">One link or a thousand.</span></h1>
+    <p class="sub">Free, fast, no sign-up. YouTube, TikTok, Instagram, X, Facebook, Vimeo, Reddit and 1000+ more sites — in MP4 up to 4K or MP3.</p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="single">Single link</button>
+      <button class="tab" data-tab="bulk">Bulk links</button>
+      <button class="tab" data-tab="scrape">Playlist / Channel scrape</button>
+    </div>
+
+    <div class="panel active" id="panel-single">
+      <form id="singleForm" class="input-row">
+        <input id="singleUrl" type="url" placeholder="Paste video link here…" required autocomplete="off">
+        <button type="button" class="ghost" id="pasteBtn">Paste</button>
+        <button class="primary" type="submit">Fetch</button>
+      </form>
+    </div>
+
+    <div class="panel" id="panel-bulk">
+      <form id="bulkForm">
+        <textarea id="bulkUrls" rows="7" placeholder="Paste multiple links — one per line (or separated by spaces/commas). Up to 200 links."></textarea>
+        <div class="row-between">
+          <span class="muted" id="bulkCount">0 links detected</span>
+          <div class="btns">
+            <label class="ghost file-label">Import .txt/.csv<input type="file" id="bulkFile" accept=".txt,.csv" hidden></label>
+            <button class="primary" type="submit">Fetch all</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel" id="panel-scrape">
+      <form id="scrapeForm" class="input-row">
+        <input id="scrapeUrl" type="url" placeholder="Playlist, channel, profile or hashtag URL…" required>
+        <select id="scrapeLimit" title="Max videos">
+          <option value="25">25 videos</option>
+          <option value="50" selected>50 videos</option>
+          <option value="100">100 videos</option>
+          <option value="250">250 videos</option>
+          <option value="500">500 videos</option>
+        </select>
+        <button class="primary" type="submit">Scrape</button>
+      </form>
+      <p class="muted small">Works with YouTube playlists/channels, TikTok profiles, Instagram profiles (cookies may be required), Vimeo showcases, SoundCloud sets, and more.</p>
+    </div>
+
+    <div id="status" class="status" hidden></div>
+  </section>
+
+  <!-- Single result -->
+  <section id="singleResult" class="card result" hidden></section>
+
+  <!-- Bulk / scrape results -->
+  <section id="bulkResult" class="card" hidden>
+    <div class="toolbar">
+      <div>
+        <h2 id="bulkTitle">Results</h2>
+        <span class="muted" id="bulkMeta"></span>
+      </div>
+      <div class="btns wrap">
+        <label class="check"><input type="checkbox" id="selectAll" checked> Select all</label>
+        <input type="search" id="filterInput" placeholder="Filter by title…">
+        <select id="bulkFormat" title="Quality for all selected">
+          <option value="best">Best quality (MP4)</option>
+          <option value="2160p">4K (2160p)</option>
+          <option value="1080p">1080p</option>
+          <option value="720p">720p</option>
+          <option value="480p">480p</option>
+          <option value="360p">360p</option>
+          <option value="mp3">MP3 audio</option>
+          <option value="m4a">M4A audio</option>
+        </select>
+        <button class="ghost" id="exportCsv">Export CSV</button>
+        <button class="ghost" id="exportJson">Export JSON</button>
+        <button class="ghost" id="copyLinks">Copy links</button>
+        <button class="primary" id="downloadSelected">Download selected (ZIP)</button>
+      </div>
+    </div>
+    <div id="jobBar" class="jobbar" hidden>
+      <div class="progress"><div id="jobProgress"></div></div>
+      <span id="jobText"></span>
+      <a id="zipLink" class="primary btn" hidden>Save ZIP</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Video</th><th>Platform</th><th>Duration</th><th>Views</th><th>Status</th><th></th></tr></thead>
+        <tbody id="bulkBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature"><div class="ico">⚡</div><h3>Lightning fast</h3><p>Parallel fetching and downloading — process dozens of links at once.</p></div>
+    <div class="feature"><div class="ico">📦</div><h3>Bulk download</h3><p>Paste hundreds of URLs or scrape a whole playlist and get everything in one ZIP.</p></div>
+    <div class="feature"><div class="ico">🎬</div><h3>Up to 4K + MP3</h3><p>Choose any resolution from 144p to 2160p, or extract audio as MP3/M4A.</p></div>
+    <div class="feature"><div class="ico">📊</div><h3>Metadata export</h3><p>Scrape titles, views, likes, durations and upload dates to CSV or JSON.</p></div>
+    <div class="feature"><div class="ico">🔒</div><h3>Private</h3><p>No account, no tracking. Files are deleted from the server automatically.</p></div>
+    <div class="feature"><div class="ico">🌐</div><h3>1000+ sites</h3><p>Powered by yt-dlp, the most complete open-source extractor available.</p></div>
+  </section>
+
+  <section id="how" class="how">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>1</b><h3>Copy the link</h3><p>Copy the URL of a video, playlist, channel or profile.</p></li>
+      <li><b>2</b><h3>Paste & fetch</h3><p>Paste one link, many links, or a playlist URL and hit fetch.</p></li>
+      <li><b>3</b><h3>Download</h3><p>Pick quality and download individually or everything as a ZIP.</p></li>
+    </ol>
+  </section>
+
+  <section id="platforms" class="platforms">
+    <h2>Supported platforms</h2>
+    <div class="chips">
+      <span>YouTube</span><span>YouTube Shorts</span><span>TikTok</span><span>Instagram</span><span>Facebook</span><span>X / Twitter</span>
+      <span>Reddit</span><span>Vimeo</span><span>Dailymotion</span><span>Twitch clips</span><span>SoundCloud</span><span>Bilibili</span>
+      <span>Pinterest</span><span>Snapchat</span><span>LinkedIn</span><span>Tumblr</span><span>Rumble</span><span>+1000 more</span>
+    </div>
+  </section>
+
+  <section id="faq" class="faq">
+    <h2>Frequently asked questions</h2>
+    <details><summary>Is VideoFetch free?</summary><p>Yes. There are no fees, no sign-up and no watermarks.</p></details>
+    <details><summary>How do I download many videos at once?</summary><p>Use the <b>Bulk links</b> tab to paste up to 200 URLs, or the <b>Playlist / Channel scrape</b> tab to pull every video from a playlist, channel or profile. Select the ones you want and click <b>Download selected (ZIP)</b>.</p></details>
+    <details><summary>Can I download only the audio?</summary><p>Yes — choose MP3 or M4A from the quality menu.</p></details>
+    <details><summary>Why did a link fail?</summary><p>Private, age-restricted, region-locked or login-only videos can't be fetched without cookies. The server admin can configure a cookies file to enable these.</p></details>
+    <details><summary>Is it legal?</summary><p>Only download content you own or have permission to download, and respect each platform's terms of service and copyright law.</p></details>
+  </section>
+</main>
+
+<footer>
+  <p>© <span id="year"></span> VideoFetch · For personal use with content you have rights to · Powered by yt-dlp</p>
+</footer>
+
+<template id="rowTpl">
+  <tr>
+    <td><input type="checkbox" class="sel" checked></td>
+    <td class="vid"><img loading="lazy" alt=""><div><a class="t" target="_blank" rel="noopener"></a><div class="muted small u"></div></div></td>
+    <td class="plat"></td>
+    <td class="dur"></td>
+    <td class="views"></td>
+    <td class="st"></td>
+    <td><button class="ghost sm dl">Download</button></td>
+  </tr>
+</template>
+
+<script>
+// Set this to your backend URL if this file is hosted elsewhere, e.g. "https://api.example.com"
+window.VF_API = window.VF_API || "";
+</script>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+
+// Backend location: same origin by default; override with ?api=https://your-server or window.VF_API.
+const API = (new URLSearchParams(location.search).get("api") || window.VF_API || "").replace(/\/$/, "");
+
+let rows = [];          // bulk/scrape results
+let currentJob = null;  // polling job id
+
+// ---------- helpers ----------
+const fmtDur = (s) => {
+  if (!s && s !== 0) return "—";
+  s = Math.round(s);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(sec).padStart(2, "0");
+};
+const fmtNum = (n) => (n == null ? "—" : Intl.NumberFormat("en", { notation: "compact" }).format(n));
+const fmtDate = (d) => (d && d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : d || "");
+const hostName = (u) => { try { return new URL(u).hostname.replace(/^www\.|^m\./, ""); } catch { return ""; } };
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function parseUrls(text) {
+  const found = text.match(/https?:\/\/[^\s,;"'<>]+|(?:www\.)[^\s,;"'<>]+/gi) || [];
+  return [...new Set(found.map((u) => u.replace(/[).\]]+$/, "")))];
+}
+
+function setStatus(msg, type = "loading") {
+  const el = $("#status");
+  if (!msg) { el.hidden = true; return; }
+  el.hidden = false;
+  el.className = "status" + (type === "error" ? " error" : "");
+  el.innerHTML = (type === "loading" ? '<span class="spinner"></span>' : "") + `<span>${esc(msg)}</span>`;
+}
+
+async function api(path, body) {
+  const res = await fetch(API + path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
+  return data;
+}
+
+function downloadUrl(url, format) {
+  return `${API}/api/download?url=${encodeURIComponent(url)}&format=${encodeURIComponent(format)}`;
+}
+
+function triggerDownload(href) {
+  const a = document.createElement("a");
+  a.href = href; a.download = ""; document.body.appendChild(a); a.click(); a.remove();
+}
+
+function saveFile(name, content, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ---------- tabs / theme ----------
+$$(".tab").forEach((t) => t.addEventListener("click", () => {
+  $$(".tab").forEach((x) => x.classList.toggle("active", x === t));
+  $$(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + t.dataset.tab));
+}));
+
+const savedTheme = (() => { try { return localStorage.getItem("vf-theme"); } catch { return null; } })();
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+$("#themeBtn").addEventListener("click", () => {
+  const dark = document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = dark ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("vf-theme", next); } catch {}
+});
+$("#year").textContent = new Date().getFullYear();
+
+// ---------- single ----------
+$("#pasteBtn").addEventListener("click", async () => {
+  try { $("#singleUrl").value = (await navigator.clipboard.readText()).trim(); } catch { $("#singleUrl").focus(); }
+});
+
+$("#singleForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = $("#singleUrl").value.trim();
+  const box = $("#singleResult");
+  box.hidden = true;
+  setStatus("Fetching video info…");
+  try {
+    const info = await api("/api/info", { url });
+    setStatus(null);
+    renderSingle(info);
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
+});
+
+function renderSingle(info) {
+  const box = $("#singleResult");
+  box.innerHTML = `
+    <div><img src="${esc(info.thumbnail || "")}" alt="" referrerpolicy="no-referrer"></div>
+    <div>
+      <h2>${esc(info.title)}</h2>
+      <div class="stats">
+        ${info.uploader ? `<span>👤 ${esc(info.uploader)}</span>` : ""}
+        <span>🎞 ${esc(info.platform || hostName(info.url))}</span>
+        <span>⏱ ${fmtDur(info.duration)}</span>
+        ${info.view_count != null ? `<span>👁 ${fmtNum(info.view_count)}</span>` : ""}
+        ${info.like_count != null ? `<span>❤ ${fmtNum(info.like_count)}</span>` : ""}
+        ${info.upload_date ? `<span>📅 ${fmtDate(info.upload_date)}</span>` : ""}
+      </div>
+      <div class="fmt-list">
+        ${info.formats.map((f) => `
+          <div class="fmt">
+            <span><b>${esc(f.label)}</b><span class="tag ${f.kind}">${esc(f.ext.toUpperCase())}</span>
+              ${f.size ? `<span class="muted small"> ~${esc(f.size)}</span>` : ""}</span>
+            <a class="primary btn sm" href="${downloadUrl(info.url, f.id)}" download>⬇</a>
+          </div>`).join("")}
+      </div>
+      <p class="muted small">Large files are prepared on the server first — the download starts when ready.</p>
+    </div>`;
+  box.hidden = false;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ---------- bulk ----------
+const bulkTa = $("#bulkUrls");
+bulkTa.addEventListener("input", () => { $("#bulkCount").textContent = `${parseUrls(bulkTa.value).length} links detected`; });
+$("#bulkFile").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  bulkTa.value = (bulkTa.value ? bulkTa.value + "\n" : "") + parseUrls(await file.text()).join("\n");
+  bulkTa.dispatchEvent(new Event("input"));
+  e.target.value = "";
+});
+
+$("#bulkForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const urls = parseUrls(bulkTa.value);
+  if (!urls.length) return setStatus("No valid links found.", "error");
+  if (urls.length > 200) return setStatus("Max 200 links at once.", "error");
+  setStatus(`Fetching info for ${urls.length} link(s)…`);
+  try {
+    const { results } = await api("/api/bulk-info", { urls });
+    setStatus(null);
+    showRows(results.map((r) => ({ ...r, status: r.ok ? "ready" : "error" })), "Bulk results");
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
+});
+
+// ---------- scrape ----------
+$("#scrapeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = $("#scrapeUrl").value.trim();
+  const limit = +$("#scrapeLimit").value;
+  setStatus("Scraping playlist / channel… this can take a moment.");
+  try {
+    const data = await api("/api/scrape", { url, limit });
+    setStatus(null);
+    if (!data.items.length) return setStatus("No videos found at that URL.", "error");
+    showRows(data.items.map((r) => ({ ...r, ok: true, status: "ready" })), data.title || "Scraped videos", data.uploader);
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
+});
+
+// ---------- results table ----------
+function showRows(list, title, subtitle) {
+  rows = list;
+  $("#bulkTitle").textContent = title;
+  const ok = rows.filter((r) => r.ok).length;
+  const totalDur = rows.reduce((a, r) => a + (r.duration || 0), 0);
+  $("#bulkMeta").textContent = [subtitle, `${rows.length} items`, ok !== rows.length ? `${rows.length - ok} failed` : "", totalDur ? `total ${fmtDur(totalDur)}` : ""]
+    .filter(Boolean).join(" · ");
+  $("#jobBar").hidden = true;
+  $("#selectAll").checked = true;
+  $("#filterInput").value = "";
+  renderRows();
+  $("#bulkResult").hidden = false;
+  $("#bulkResult").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function statusPill(r) {
+  const map = { ready: ["Ready", ""], queued: ["Queued", "run"], downloading: [`${r.progress ?? 0}%`, "run"], processing: ["Processing", "run"], done: ["Done", "ok"], error: ["Failed", "err"] };
+  const [txt, cls] = map[r.status] || [r.status, ""];
+  return `<span class="pill ${cls}" title="${esc(r.error || "")}">${esc(txt)}</span>`;
+}
+
+function renderRows() {
+  const body = $("#bulkBody");
+  body.innerHTML = "";
+  const tpl = $("#rowTpl");
+  rows.forEach((r, i) => {
+    const tr = tpl.content.firstElementChild.cloneNode(true);
+    tr.dataset.idx = i;
+    const sel = $(".sel", tr);
+    sel.checked = r.selected !== false && r.ok;
+    sel.disabled = !r.ok;
+    sel.addEventListener("change", () => { r.selected = sel.checked; });
+    const img = $("img", tr);
+    if (r.thumbnail) { img.src = r.thumbnail; img.referrerPolicy = "no-referrer"; } else img.style.visibility = "hidden";
+    const a = $(".t", tr);
+    a.href = r.url; a.textContent = r.title || r.url;
+    $(".u", tr).textContent = r.ok ? (r.uploader || hostName(r.url)) : (r.error || "");
+    $(".plat", tr).textContent = r.platform || hostName(r.url);
+    $(".dur", tr).textContent = fmtDur(r.duration);
+    $(".views", tr).textContent = fmtNum(r.view_count);
+    $(".st", tr).innerHTML = statusPill(r);
+    const dl = $(".dl", tr);
+    dl.disabled = !r.ok;
+    dl.addEventListener("click", () => {
+      if (r.jobFile) return triggerDownload(r.jobFile);
+      triggerDownload(downloadUrl(r.url, $("#bulkFormat").value));
+    });
+    body.appendChild(tr);
+  });
+  applyFilter();
+}
+
+function applyFilter() {
+  const q = $("#filterInput").value.toLowerCase();
+  $$("#bulkBody tr").forEach((tr) => {
+    const r = rows[tr.dataset.idx];
+    tr.classList.toggle("hidden", !!q && !(r.title || r.url).toLowerCase().includes(q));
+  });
+}
+$("#filterInput").addEventListener("input", applyFilter);
+
+$("#selectAll").addEventListener("change", (e) => {
+  $$("#bulkBody tr:not(.hidden)").forEach((tr) => {
+    const r = rows[tr.dataset.idx];
+    if (!r.ok) return;
+    r.selected = e.target.checked;
+    $(".sel", tr).checked = e.target.checked;
+  });
+});
+
+const selectedRows = () => rows.filter((r) => r.ok && r.selected !== false);
+
+// ---------- exports ----------
+const exportFields = ["title", "url", "platform", "uploader", "duration", "view_count", "like_count", "comment_count", "upload_date", "thumbnail", "description"];
+$("#exportCsv").addEventListener("click", () => {
+  const list = selectedRows().length ? selectedRows() : rows;
+  const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [exportFields.join(","), ...list.map((r) => exportFields.map((f) => q(r[f])).join(","))].join("\n");
+  saveFile("videofetch-export.csv", "﻿" + csv, "text/csv");
+});
+$("#exportJson").addEventListener("click", () => {
+  const list = (selectedRows().length ? selectedRows() : rows).map((r) => Object.fromEntries([...exportFields, "formats"].map((f) => [f, r[f]])));
+  saveFile("videofetch-export.json", JSON.stringify(list, null, 2), "application/json");
+});
+$("#copyLinks").addEventListener("click", async (e) => {
+  const list = selectedRows().length ? selectedRows() : rows;
+  await navigator.clipboard.writeText(list.map((r) => r.url).join("\n"));
+  e.target.textContent = "Copied!";
+  setTimeout(() => (e.target.textContent = "Copy links"), 1500);
+});
+
+// ---------- bulk download job ----------
+$("#downloadSelected").addEventListener("click", async () => {
+  const list = selectedRows();
+  if (!list.length) return alert("Select at least one video.");
+  const format = $("#bulkFormat").value;
+  const btn = $("#downloadSelected");
+  btn.disabled = true;
+  try {
+    const job = await api("/api/jobs", {
+      items: list.map((r) => ({ url: r.url, format, title: r.title })),
+      zip_name: ($("#bulkTitle").textContent || "videofetch").slice(0, 60) + ".zip",
+    });
+    currentJob = job.id;
+    list.forEach((r, i) => { r.jobIdx = i; r.status = "queued"; r.progress = 0; r.jobFile = null; });
+    $("#jobBar").hidden = false;
+    $("#zipLink").hidden = true;
+    pollJob(job.id, list);
+  } catch (err) {
+    alert(err.message);
+    btn.disabled = false;
+  }
+});
+
+async function pollJob(id, list) {
+  if (currentJob !== id) return;
+  let job;
+  try { job = await api(`/api/jobs/${id}`); } catch { return setTimeout(() => pollJob(id, list), 2000); }
+  job.items.forEach((it, i) => {
+    const r = list[i];
+    r.status = it.status; r.progress = it.progress; r.error = it.error;
+    if (it.status === "done") r.jobFile = `${API}/api/jobs/${id}/file/${i}`;
+  });
+  const pct = job.items.reduce((a, it) => a + (it.status === "done" || it.status === "error" ? 100 : it.progress || 0), 0) / job.total;
+  $("#jobProgress").style.width = pct.toFixed(1) + "%";
+  $("#jobText").textContent = `${job.completed}/${job.total} processed · ${job.succeeded} succeeded`;
+  $$("#bulkBody tr").forEach((tr) => { $(".st", tr).innerHTML = statusPill(rows[tr.dataset.idx]); });
+
+  if (job.status === "finished") {
+    $("#downloadSelected").disabled = false;
+    if (job.zip_ready) {
+      const z = $("#zipLink");
+      z.href = `${API}/api/jobs/${id}/zip`; z.hidden = false;
+      triggerDownload(z.href);
+      $("#jobText").textContent += " · ZIP ready";
+    } else {
+      $("#jobText").textContent += " · nothing to zip";
+    }
+    return;
+  }
+  setTimeout(() => pollJob(id, list), 1200);
+}
+</script>
+</body>
+</html>

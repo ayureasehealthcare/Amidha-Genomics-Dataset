@@ -21,6 +21,13 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 # open http://localhost:8000
 ```
 
+## Standalone HTML
+`videofetch.html` is the whole frontend in one file, with the CSS and JS inside it. You can host it anywhere (Netlify, GitHub Pages, cPanel) or open it straight from disk. Point it at your backend in either of two ways:
+- add `?api=https://your-backend.com` to the URL, or
+- edit `window.VF_API = "https://your-backend.com"` near the bottom of the file.
+
+The backend sends CORS headers. Use `VF_CORS_ORIGINS=https://yoursite.com` to restrict which sites can call it.
+
 ## Docker
 ```bash
 docker build -t videofetch ./videofetch
@@ -35,6 +42,7 @@ docker run -p 8000:8000 videofetch
 | `VF_MAX_SCRAPE_ITEMS` | 500 | max videos per playlist/channel scrape |
 | `VF_JOB_TTL` | 3600 | seconds before finished job files are deleted |
 | `VF_WORK_DIR` | system temp | where downloads are staged |
+| `VF_CORS_ORIGINS` | * | comma-separated origins allowed to call the API |
 | `VF_COOKIES_FILE` | – | Netscape `cookies.txt` for login-only, private or age-restricted content (e.g. Instagram) |
 
 ## API

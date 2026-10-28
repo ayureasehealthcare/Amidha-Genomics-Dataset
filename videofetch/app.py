@@ -21,6 +21,7 @@ from pathlib import Path
 
 import yt_dlp
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -41,6 +42,9 @@ JS_RUNTIMES = {name: {} for name in ("deno", "node") if shutil.which(name)}
 
 pool = ThreadPoolExecutor(max_workers=WORKERS)
 app = FastAPI(title="VideoFetch", version="1.0.0")
+# Allow the standalone videofetch.html to call this API from another origin.
+app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("VF_CORS_ORIGINS", "*").split(","),
+                   allow_methods=["*"], allow_headers=["*"], expose_headers=["Content-Disposition"])
 
 
 # --------------------------------------------------------------------------- #
