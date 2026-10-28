@@ -18,6 +18,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import re
 import sys
 import time
@@ -43,9 +44,10 @@ log = logging.getLogger("tamilradios")
 
 
 class Client:
-    def __init__(self, start_url: str, delay: float, user_agent: str):
+    def __init__(self, start_url: str, delay: float, user_agent: str, timeout: float = 60):
         self.host = urlparse(start_url).netloc
         self.delay = delay
+        self.timeout = timeout
         self.user_agent = user_agent
         self.session = requests.Session()
         self.session.headers["User-Agent"] = user_agent
@@ -73,7 +75,7 @@ class Client:
                 time.sleep(wait)
             self._last = time.monotonic()
             try:
-                r = self.session.get(url, timeout=25)
+                r = self.session.get(url, timeout=self.timeout)
             except requests.RequestException as e:
                 log.warning("GET %s failed (%s), attempt %d", url, e, attempt + 1)
                 time.sleep(2 ** (attempt + 1))
@@ -222,13 +224,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-pages", type=int, default=1000)
     ap.add_argument("--delay", type=float, default=1.5, help="seconds between requests (min 1.0)")
     ap.add_argument("--check-streams", action="store_true", help="probe each stream URL's headers")
+    ap.add_argument("--timeout", type=float, default=60, help="per-request timeout in seconds")
     ap.add_argument("--contact", help="email/URL to include in the User-Agent")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s %(message)s")
     ua = f"{USER_AGENT[:-1]}; {args.contact})" if args.contact else USER_AGENT
-    client = Client(args.start_url, max(args.delay, 1.0), ua)
+    client = Client(args.start_url, max(args.delay, 1.0), ua, args.timeout)
 
     urls = sitemap_urls(client, args.start_url)
     if urls:
@@ -238,13 +241,26 @@ def main(argv: list[str] | None = None) -> int:
         log.info("no sitemap; crawling")
         urls = crawl_urls(client, args.start_url, args.max_pages)
 
+    # Each station is appended to a progress file as soon as it is scraped, so a slow or
+    # interrupted run keeps its results and a rerun skips pages already done.
+    progress = f"{args.out}.progress.jsonl"
     rows = []
-    for i, url in enumerate(urls, 1):
-        if not urlparse(url).path.strip("/") or not (html := client.get(url)):
-            continue
-        if row := extract(url, html):
-            rows.append(row)
-            log.info("[%d/%d] %s -> %s", i, len(urls), row["name"], row["stream_url"])
+    try:
+        with open(progress, encoding="utf-8") as f:
+            rows = [json.loads(line) for line in f if line.strip()]
+        log.info("resuming: %d stations already in %s", len(rows), progress)
+    except FileNotFoundError:
+        pass
+    done = {r["page_url"] for r in rows}
+    with open(progress, "a", encoding="utf-8") as pf:
+        for i, url in enumerate(urls, 1):
+            if url in done or not urlparse(url).path.strip("/") or not (html := client.get(url)):
+                continue
+            if row := extract(url, html):
+                rows.append(row)
+                pf.write(json.dumps(row, ensure_ascii=False) + "\n")
+                pf.flush()
+                log.info("[%d/%d] %s -> %s", i, len(urls), row["name"], row["stream_url"])
 
     if args.check_streams:
         for r in rows:
@@ -254,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
 
     rows.sort(key=lambda r: (r["name"] or "").lower())
     write(rows, args.out)
+    os.remove(progress)
     log.info("wrote %d stations to %s", len(rows), args.out)
     return 0 if rows else 1
 

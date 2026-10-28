@@ -10,7 +10,7 @@ python scrape.py --out stations.csv --check-streams   # also probes each stream'
 ```
 
 Options: `--max-pages` (default 1000), `--delay` seconds between requests (default 1.5, minimum 1),
-`--contact` (adds an email/URL to the User-Agent), `--start-url`, `-v`.
+`--timeout` (default 60), `--contact` (adds an email/URL to the User-Agent), `--start-url`, `-v`.
 
 ## How it works
 
@@ -20,7 +20,9 @@ Options: `--max-pages` (default 1000), `--delay` seconds between requests (defau
      object whose `slug` matches the page: stream URL, site proxy URL, bitrate, genre, image, id
    - the schema.org `RadioStation` JSON-LD block: description, frequency, city/region/country,
      language, founding year, official website and social links
-3. Pages with neither source (contact, terms, genre listings) are skipped.
+3. Each station is appended to `<out>.progress.jsonl` as it is scraped; rerunning the same
+   command resumes from there. The file is removed once the final output is written.
+4. Pages with neither source (contact, terms, genre listings) are skipped.
 
 ## Output fields
 
